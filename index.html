@@ -1,159 +1,305 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>社会の歴史サイト</title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      font-family: "Yu Gothic", sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Liquid Glass Short URL</title>
 
-    header {
-      padding: 16px 20px;
-      background: #111827;
-      border-bottom: 1px solid #334155;
-    }
+<style>
+:root{
+  --glass: rgba(255,255,255,0.08);
+  --glass2: rgba(255,255,255,0.12);
+  --border: rgba(255,255,255,0.18);
+  --text: rgba(255,255,255,0.9);
+  --muted: rgba(255,255,255,0.6);
+  --accent: #60a5fa;
+}
 
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-    }
+body{
+  margin:0;
+  font-family: system-ui;
+  color:#111827;
+  min-height:100vh;
+  overflow-x:hidden;
+  background:#ffffff;
+}
 
-    header p {
-      margin: 4px 0 0;
-      font-size: 13px;
-      color: #94a3b8;
-    }
+/* 光の装飾も白ベースに調整 */
+body::before,
+body::after{
+  content:"";
+  position:fixed;
+  width:500px;
+  height:500px;
+  border-radius:50%;
+  filter: blur(90px);
+  opacity:0.25;
+  z-index:-1;
+}
 
-    .container {
-      height: calc(100vh - 72px);
-      display: flex;
-    }
+body::before{
+  background:#dbeafe; /* very light blue */
+  top:-120px;
+  left:-120px;
+}
 
-    .sidebar {
-      width: 260px;
-      background: #0b1220;
-      border-right: 1px solid #1f2937;
-      padding: 16px;
-      box-sizing: border-box;
-    }
+body::after{
+  background:#ede9fe; /* very light purple */
+  bottom:-120px;
+  right:-120px;
+}
 
-    .sidebar h2 {
-      font-size: 14px;
-      margin-top: 0;
-      color: #cbd5e1;
-    }
+/* ガラスを白向けに調整 */
+.glass{
+  background: rgba(255,255,255,0.6);
+  border:1px solid rgba(0,0,0,0.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  transition:0.25s;
+}
 
-    .sidebar ul {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
+.glass:hover{
+  transform: translateY(-2px);
+  background: rgba(255,255,255,0.75);
+}
 
-    .sidebar li {
-      margin: 8px 0;
-      font-size: 13px;
-      color: #94a3b8;
-      cursor: pointer;
-    }
+/* input */
+input{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  background:rgba(255,255,255,0.9);
+  color:#111827;
+  outline:none;
+}
 
-    .viewer {
-      flex: 1;
-      position: relative;
-      background: white;
-      overflow: hidden;
-    }
+input:focus{
+  border-color:#93c5fd;
+  box-shadow: 0 0 0 3px rgba(147,197,253,0.35);
+}
 
-    .loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: #64748b;
-      background: #ffffff;
-    }
+input::placeholder{
+  color:rgba(0,0,0,0.35);
+}
 
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-  </style>
+/* button */
+button{
+  width:100%;
+  margin-top:12px;
+  padding:12px;
+  border:none;
+  border-radius:12px;
+  background: linear-gradient(135deg,#3b82f6,#6366f1);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+button:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* text */
+.small{
+  font-size:12px;
+  opacity:0.7;
+  word-break:break-all;
+  margin-top:10px;
+}
+
+iframe{
+  width:100vw;
+  height:100vh;
+  border:none;
+  display:block;
+}
+
+
+</style>
 </head>
+
 <body>
-  <header>
-    <h1>社会の歴史サイト</h1>
-    <p>歴史・社会科の学習用にまとめられたインタラクティブ教材</p>
-  </header>
+<div id="app"></div>
 
-  <div class="container">
-    <div class="sidebar">
-      <h2>学習メニュー</h2>
-      <ul>
-        <li data-url="https://example.com">旧石器時代</li>
-        <li data-url="https://example.com">縄文・弥生時代</li>
-        <li data-url="https://example.com">古代国家の成立</li>
-        <li data-url="https://example.com">中世の日本</li>
-        <li data-url="https://example.com">近世（江戸時代）</li>
-        <li data-url="https://example.com">近代化と戦争</li>
-        <li data-url="https://example.com">現代社会</li>
-      </ul>
+<script>
+
+const GAS = "https://script.google.com/macros/s/AKfycbyD8ffRUGqqa4h6ASpb8NVk6_okS0Vhyd1deYMqIoFCvC5djGHQ07pTcv14bESiImkVSg/exec";
+
+/* =========================
+   ROUTER
+========================= */
+(async () => {
+
+  const id = new URLSearchParams(location.search).get("q")
+          || location.hash.replace("#","");
+
+  if(id){
+    try{
+      const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+
+      if(data.url){
+        document.body.innerHTML = "";
+        const iframe = document.createElement("iframe");
+        iframe.src = data.url;
+        document.body.appendChild(iframe);
+        return;
+      }
+    }catch(e){}
+
+    document.body.innerHTML = "<div style='padding:20px'>Not found</div>";
+    return;
+  }
+
+  document.getElementById("app").innerHTML = `
+    <div class="container">
+      <div class="grid">
+
+        <div class="glass">
+          <h2>Short URL</h2>
+
+          <input id="id" placeholder="ID">
+          <input id="url" placeholder="URL">
+          <input id="password" placeholder="password">
+
+          <button onclick="create()">作成</button>
+          <div id="result" class="small"></div>
+        </div>
+
+        <div class="glass">
+          <h2>編集</h2>
+
+          <input id="editId" placeholder="ID">
+          <input id="editPass" placeholder="password">
+
+          <button onclick="login()">開く</button>
+
+          <div id="editBox" style="display:none">
+
+            <input id="editUrl" placeholder="new url">
+            <input id="editPass2" placeholder="password">
+
+            <button onclick="update()">更新</button>
+            <button onclick="remove()">削除</button>
+
+          </div>
+        </div>
+
+      </div>
     </div>
+  `;
+})();
 
-    <div class="viewer" id="viewer">
-      <div class="loading" id="loading">教材を読み込み中...</div>
-    </div>
-  </div>
+/* =========================
+   CREATE
+========================= */
+async function create(){
 
-  <script>
-    const viewer = document.getElementById("viewer");
-    const loading = document.getElementById("loading");
+  const id = document.getElementById("id").value.trim();
+  const url = document.getElementById("url").value.trim();
+  const password = document.getElementById("password").value;
 
-    function createIframe(url) {
-      loading.style.display = "flex";
+  const res = await fetch(GAS,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({action:"create",id,url,password})
+  });
 
-      // 既存iframe削除
-      const old = viewer.querySelector("iframe");
-      if (old) old.remove();
+  const data = await res.json();
 
-      const iframe = document.createElement("iframe");
-      iframe.src = url;
+  document.getElementById("result").textContent =
+    data.error || `OK → ${location.origin}/?q=${id}`;
+}
 
-      iframe.onload = () => {
-        loading.style.display = "none";
-      };
+/* =========================
+   LOGIN
+========================= */
+async function login(){
 
-      viewer.appendChild(iframe);
+  const id = document.getElementById("editId").value.trim();
+
+  try{
+    const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+
+    if(!data.url){
+      alert("not found");
+      return;
     }
 
-    // 初期ロード後にiframeを動的生成
-    window.addEventListener("DOMContentLoaded", () => {
-      const DEFAULT_URL = "https://example.com";
+    window.currentId = id;
+    document.getElementById("editBox").style.display = "block";
+    document.getElementById("editUrl").value = data.url;
 
-      const params = new URLSearchParams(window.location.search);
-      const url = params.get("url") || DEFAULT_URL;
+  }catch(e){
+    alert("error");
+  }
+}
 
-      setTimeout(() => {
-        createIframe(url);
-      }, 500);
-    });
+/* =========================
+   UPDATE
+========================= */
+async function update(){
 
-    // サイドバークリックで切り替え
-    document.querySelectorAll(".sidebar li").forEach(item => {
-      item.addEventListener("click", () => {
-        const url = item.dataset.url;
-        createIframe(url);
-      });
-    });
-  </script>
+  if(!window.currentId) return;
+
+  const url = document.getElementById("editUrl").value.trim();
+  const password = document.getElementById("editPass2").value;
+
+  const res = await fetch(GAS,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      action:"update",
+      id:window.currentId,
+      url,
+      password
+    })
+  });
+
+  await res.json();
+  alert("updated");
+}
+
+/* =========================
+   DELETE
+========================= */
+async function remove(){
+
+  if(!window.currentId) return;
+
+  const password = document.getElementById("editPass2").value;
+
+  const res = await fetch(GAS,{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      action:"delete",
+      id:window.currentId,
+      password
+    })
+  });
+
+  await res.json();
+  alert("deleted");
+}
+
+</script>
+
 </body>
 </html>
