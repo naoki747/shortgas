@@ -3,51 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fullscreen Embed</title>
+  <title>社会の歴史サイト</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
+      font-family: "Yu Gothic", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+
+    header {
+      padding: 16px 20px;
+      background: #111827;
+      border-bottom: 1px solid #334155;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    header p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .container {
+      height: calc(100vh - 72px);
+      display: flex;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: #0b1220;
+      border-right: 1px solid #1f2937;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .sidebar h2 {
+      font-size: 14px;
+      margin-top: 0;
+      color: #cbd5e1;
+    }
+
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .sidebar li {
+      margin: 8px 0;
+      font-size: 13px;
+      color: #94a3b8;
+      cursor: pointer;
+    }
+
+    .viewer {
+      flex: 1;
+      position: relative;
+      background: white;
       overflow: hidden;
-      background: black;
+    }
+
+    .loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #64748b;
+      background: #ffffff;
     }
 
     iframe {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       border: none;
-    }
-
-    .error {
-      color: white;
-      font-family: sans-serif;
-      padding: 20px;
     }
   </style>
 </head>
 <body>
-  <iframe id="frame"></iframe>
+  <header>
+    <h1>社会の歴史サイト</h1>
+    <p>歴史・社会科の学習用にまとめられたインタラクティブ教材</p>
+  </header>
+
+  <div class="container">
+    <div class="sidebar">
+      <h2>学習メニュー</h2>
+      <ul>
+        <li data-url="https://example.com">旧石器時代</li>
+        <li data-url="https://example.com">縄文・弥生時代</li>
+        <li data-url="https://example.com">古代国家の成立</li>
+        <li data-url="https://example.com">中世の日本</li>
+        <li data-url="https://example.com">近世（江戸時代）</li>
+        <li data-url="https://example.com">近代化と戦争</li>
+        <li data-url="https://example.com">現代社会</li>
+      </ul>
+    </div>
+
+    <div class="viewer" id="viewer">
+      <div class="loading" id="loading">教材を読み込み中...</div>
+    </div>
+  </div>
 
   <script>
-    // ここを固定サイトにしたいなら書き換え
-    const DEFAULT_URL = "https://example.com";
+    const viewer = document.getElementById("viewer");
+    const loading = document.getElementById("loading");
 
-    function getUrlParam() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("url");
-    }
+    function createIframe(url) {
+      loading.style.display = "flex";
 
-    const url = getUrlParam() || DEFAULT_URL;
+      // 既存iframe削除
+      const old = viewer.querySelector("iframe");
+      if (old) old.remove();
 
-    const iframe = document.getElementById("frame");
-
-    try {
+      const iframe = document.createElement("iframe");
       iframe.src = url;
-    } catch (e) {
-      document.body.innerHTML = '<div class="error">URLの読み込みに失敗しました</div>';
+
+      iframe.onload = () => {
+        loading.style.display = "none";
+      };
+
+      viewer.appendChild(iframe);
     }
+
+    // 初期ロード後にiframeを動的生成
+    window.addEventListener("DOMContentLoaded", () => {
+      const DEFAULT_URL = "https://example.com";
+
+      const params = new URLSearchParams(window.location.search);
+      const url = params.get("url") || DEFAULT_URL;
+
+      setTimeout(() => {
+        createIframe(url);
+      }, 500);
+    });
+
+    // サイドバークリックで切り替え
+    document.querySelectorAll(".sidebar li").forEach(item => {
+      item.addEventListener("click", () => {
+        const url = item.dataset.url;
+        createIframe(url);
+      });
+    });
   </script>
 </body>
 </html>
