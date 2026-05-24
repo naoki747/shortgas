@@ -3,117 +3,64 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Liquid Glass Short URL</title>
+<title>Short URL</title>
 
 <style>
 :root{
-  --glass: rgba(255,255,255,0.08);
-  --glass2: rgba(255,255,255,0.12);
-  --border: rgba(255,255,255,0.18);
-  --text: rgba(255,255,255,0.9);
-  --muted: rgba(255,255,255,0.6);
-  --accent: #60a5fa;
+  --blue:#2563eb;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e2e8f0;
+}
+
+*{
+  box-sizing:border-box;
+  font-family:system-ui;
 }
 
 body{
   margin:0;
-  font-family: system-ui;
-  color:#111827;
-  min-height:100vh;
-  overflow-x:hidden;
-  background:#ffffff;
+  background:var(--bg);
+  color:var(--text);
 }
 
-/* 光の装飾も白ベースに調整 */
-body::before,
-body::after{
-  content:"";
-  position:fixed;
-  width:500px;
-  height:500px;
-  border-radius:50%;
-  filter: blur(90px);
-  opacity:0.25;
-  z-index:-1;
+/* ここ重要：初期は完全非表示 */
+#app{
+  display:none;
 }
 
-body::before{
-  background:#dbeafe; /* very light blue */
-  top:-120px;
-  left:-120px;
+.container{
+  max-width:800px;
+  margin:0 auto;
+  padding:24px;
 }
 
-body::after{
-  background:#ede9fe; /* very light purple */
-  bottom:-120px;
-  right:-120px;
+.card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:16px;
+  margin-bottom:16px;
 }
 
-/* ガラスを白向けに調整 */
-.glass{
-  background: rgba(255,255,255,0.6);
-  border:1px solid rgba(0,0,0,0.08);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-radius:18px;
-  padding:18px;
-  box-shadow:
-    0 10px 30px rgba(0,0,0,0.08),
-    inset 0 1px 0 rgba(255,255,255,0.9);
-  transition:0.25s;
-}
-
-.glass:hover{
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.75);
-}
-
-/* input */
 input{
   width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:12px;
-  border:1px solid rgba(0,0,0,0.12);
-  background:rgba(255,255,255,0.9);
-  color:#111827;
-  outline:none;
+  padding:10px;
+  margin-top:8px;
+  border:1px solid var(--border);
+  border-radius:10px;
 }
 
-input:focus{
-  border-color:#93c5fd;
-  box-shadow: 0 0 0 3px rgba(147,197,253,0.35);
-}
-
-input::placeholder{
-  color:rgba(0,0,0,0.35);
-}
-
-/* button */
 button{
   width:100%;
-  margin-top:12px;
-  padding:12px;
-  border:none;
-  border-radius:12px;
-  background: linear-gradient(135deg,#3b82f6,#6366f1);
-  color:white;
-  font-weight:600;
-  cursor:pointer;
-  transition:0.2s;
-}
-
-button:hover{
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-}
-
-/* text */
-.small{
-  font-size:12px;
-  opacity:0.7;
-  word-break:break-all;
   margin-top:10px;
+  padding:10px;
+  background:var(--blue);
+  color:white;
+  border:none;
+  border-radius:10px;
 }
 
 iframe{
@@ -122,146 +69,128 @@ iframe{
   border:none;
   display:block;
 }
-
-
 </style>
 </head>
 
 <body>
+
 <div id="app"></div>
 
 <script>
 
 const GAS = "https://script.google.com/macros/s/AKfycbyD8ffRUGqqa4h6ASpb8NVk6_okS0Vhyd1deYMqIoFCvC5djGHQ07pTcv14bESiImkVSg/exec";
 
-/* =========================
-   ROUTER
-========================= */
+/**
+ * 最初に完全制御（ここで全部決める）
+ */
 (async () => {
 
-  const id = new URLSearchParams(location.search).get("q")
-          || location.hash.replace("#","");
+  const hash = location.hash.replace("#","");
+  const query = new URLSearchParams(location.search).get("q");
+  const id = hash || query;
 
+  const app = document.getElementById("app");
+
+  // ===== ① URLアクセスモード =====
   if(id){
-    try{
-      const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
-      const data = await res.json();
+    const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
+    const data = await res.json();
 
-      if(data.url){
-        document.body.innerHTML = "";
-        const iframe = document.createElement("iframe");
-        iframe.src = data.url;
-        document.body.appendChild(iframe);
-        return;
-      }
-    }catch(e){}
+    if(data.url){
+      document.body.innerHTML = "";
+      const iframe = document.createElement("iframe");
+      iframe.src = data.url;
+      document.body.appendChild(iframe);
+      return;
+    }
 
     document.body.innerHTML = "<div style='padding:20px'>Not found</div>";
     return;
   }
 
-  document.getElementById("app").innerHTML = `
+  // ===== ② ホーム画面 =====
+  app.style.display = "block";
+
+  app.innerHTML = `
     <div class="container">
-      <div class="grid">
 
-        <div class="glass">
-          <h2>Short URL</h2>
+      <div class="card">
+        <h2>Short URL</h2>
 
-          <input id="id" placeholder="ID">
-          <input id="url" placeholder="URL">
-          <input id="password" placeholder="password">
+        <input id="id" placeholder="ID">
+        <input id="url" placeholder="URL">
+        <input id="password" placeholder="password">
 
-          <button onclick="create()">作成</button>
-          <div id="result" class="small"></div>
-        </div>
+        <button onclick="create()">作成</button>
 
-        <div class="glass">
-          <h2>編集</h2>
-
-          <input id="editId" placeholder="ID">
-          <input id="editPass" placeholder="password">
-
-          <button onclick="login()">開く</button>
-
-          <div id="editBox" style="display:none">
-
-            <input id="editUrl" placeholder="new url">
-            <input id="editPass2" placeholder="password">
-
-            <button onclick="update()">更新</button>
-            <button onclick="remove()">削除</button>
-
-          </div>
-        </div>
-
+        <div id="result"></div>
       </div>
+
+      <div class="card">
+        <h3>編集</h3>
+
+        <input id="editId" placeholder="ID">
+        <input id="editPass" placeholder="password">
+
+        <button onclick="login()">開く</button>
+
+        <div id="editPanel" style="display:none">
+          <input id="editUrl" placeholder="new URL">
+          <button onclick="update()">更新</button>
+          <button onclick="remove()">削除</button>
+        </div>
+      </div>
+
     </div>
   `;
+
 })();
 
-/* =========================
-   CREATE
-========================= */
+/**
+ * 作成
+ */
 async function create(){
-
-  const id = document.getElementById("id").value.trim();
-  const url = document.getElementById("url").value.trim();
+  const id = document.getElementById("id").value;
+  const url = document.getElementById("url").value;
   const password = document.getElementById("password").value;
 
   const res = await fetch(GAS,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
     body:JSON.stringify({action:"create",id,url,password})
   });
 
   const data = await res.json();
 
-  document.getElementById("result").textContent =
-    data.error || `OK → ${location.origin}/?q=${id}`;
+  document.getElementById("result").innerHTML =
+    data.error || `OK: ${location.origin}/?q=${id}`;
 }
 
-/* =========================
-   LOGIN
-========================= */
+/**
+ * ログイン
+ */
 async function login(){
+  const id = document.getElementById("editId").value;
+  const pass = document.getElementById("editPass").value;
 
-  const id = document.getElementById("editId").value.trim();
+  const res = await fetch(`${GAS}?action=get&id=${id}`);
+  const data = await res.json();
 
-  try{
-    const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
-    const data = await res.json();
+  if(!data.url) return alert("not found");
 
-    if(!data.url){
-      alert("not found");
-      return;
-    }
-
-    window.currentId = id;
-    document.getElementById("editBox").style.display = "block";
-    document.getElementById("editUrl").value = data.url;
-
-  }catch(e){
-    alert("error");
-  }
+  window.currentId = id;
+  document.getElementById("editPanel").style.display = "block";
+  document.getElementById("editUrl").value = data.url;
 }
 
-/* =========================
-   UPDATE
-========================= */
+/**
+ * 更新
+ */
 async function update(){
+  const url = document.getElementById("editUrl").value;
+  const password = document.getElementById("editPass").value;
 
-  if(!window.currentId) return;
-
-  const url = document.getElementById("editUrl").value.trim();
-  const password = document.getElementById("editPass2").value;
-
-  const res = await fetch(GAS,{
+  await fetch(GAS,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
     body:JSON.stringify({
       action:"update",
       id:window.currentId,
@@ -270,24 +199,17 @@ async function update(){
     })
   });
 
-  await res.json();
   alert("updated");
 }
 
-/* =========================
-   DELETE
-========================= */
+/**
+ * 削除
+ */
 async function remove(){
+  const password = document.getElementById("editPass").value;
 
-  if(!window.currentId) return;
-
-  const password = document.getElementById("editPass2").value;
-
-  const res = await fetch(GAS,{
+  await fetch(GAS,{
     method:"POST",
-    headers:{
-      "Content-Type":"application/json"
-    },
     body:JSON.stringify({
       action:"delete",
       id:window.currentId,
@@ -295,7 +217,6 @@ async function remove(){
     })
   });
 
-  await res.json();
   alert("deleted");
 }
 
