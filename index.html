@@ -2,22 +2,22 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Short URL</title>
 
 <style>
 :root{
-  --blue:#2563eb;
-  --bg:#f8fafc;
-  --card:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
-  --border:#e2e8f0;
+  --bg:#ffffff;
+  --text:#111827;
+  --muted:#6b7280;
+  --border:#e5e7eb;
+  --accent:#2563eb;
+  --error:#dc2626;
 }
 
 *{
   box-sizing:border-box;
-  font-family:system-ui;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
 }
 
 body{
@@ -26,41 +26,147 @@ body{
   color:var(--text);
 }
 
-/* ここ重要：初期は完全非表示 */
-#app{
-  display:none;
-}
+#app{display:none;}
 
 .container{
-  max-width:800px;
+  max-width:420px;
   margin:0 auto;
-  padding:24px;
+  padding:24px 16px 40px;
 }
 
-.card{
-  background:white;
+h1{
+  text-align:center;
+  margin:0 0 20px;
+  font-size:24px;
+}
+
+/* Tabs */
+.tabs{
+  display:flex;
   border:1px solid var(--border);
-  border-radius:14px;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+
+.tabs button{
+  flex:1;
+  padding:10px;
+  border:none;
+  background:#f9fafb;
+  cursor:pointer;
+  font-size:14px;
+  transition:background .2s,color .2s;
+}
+
+.tabs button.active{
+  background:var(--accent);
+  color:#fff;
+}
+
+/* Panels */
+.panel{
+  border:1px solid var(--border);
+  border-radius:12px;
   padding:16px;
-  margin-bottom:16px;
+  display:none;
+  animation:fadeSlide .25s ease;
+}
+
+.panel.active{
+  display:block;
+}
+
+@keyframes fadeSlide{
+  from{
+    opacity:0;
+    transform:translateY(8px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+/* Form */
+.field{margin-bottom:12px;}
+
+label{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
 }
 
 input{
   width:100%;
   padding:10px;
-  margin-top:8px;
+  border-radius:8px;
   border:1px solid var(--border);
-  border-radius:10px;
+  font-size:14px;
 }
 
-button{
+button.main{
   width:100%;
-  margin-top:10px;
   padding:10px;
-  background:var(--blue);
-  color:white;
+  background:var(--accent);
+  color:#fff;
   border:none;
-  border-radius:10px;
+  border-radius:8px;
+  margin-top:8px;
+  font-size:14px;
+  cursor:pointer;
+  transition:transform .1s,opacity .2s;
+}
+
+button.main:active{
+  transform:scale(.97);
+}
+
+button.sub{
+  width:100%;
+  padding:10px;
+  background:#f3f4f6;
+  border:1px solid var(--border);
+  border-radius:8px;
+  margin-top:8px;
+  font-size:14px;
+}
+
+/* Edit panel animation */
+#editPanel{
+  overflow:hidden;
+  max-height:0;
+  transition:max-height .3s ease;
+}
+
+#editPanel.open{
+  max-height:200px;
+}
+
+/* Toast */
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translate(-50%,20px);
+  background:#111827;
+  color:#fff;
+  padding:12px 16px;
+  border-radius:8px;
+  font-size:14px;
+  opacity:0;
+  pointer-events:none;
+  transition:.3s;
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+.toast.error{
+  background:var(--error);
 }
 
 iframe{
@@ -73,154 +179,144 @@ iframe{
 </head>
 
 <body>
-
 <div id="app"></div>
+<div id="toast" class="toast"></div>
 
 <script>
+const GAS="https://script.google.com/macros/s/AKfycbyD8ffRUGqqa4h6ASpb8NVk6_okS0Vhyd1deYMqIoFCvC5djGHQ07pTcv14bESiImkVSg/exec";
 
-const GAS = "https://script.google.com/macros/s/AKfycbyD8ffRUGqqa4h6ASpb8NVk6_okS0Vhyd1deYMqIoFCvC5djGHQ07pTcv14bESiImkVSg/exec";
-
-/**
- * 最初に完全制御（ここで全部決める）
- */
-(async () => {
-
-  const hash = location.hash.replace("#","");
-  const query = new URLSearchParams(location.search).get("q");
-  const id = hash || query;
-
-  const app = document.getElementById("app");
-
-  // ===== ① URLアクセスモード =====
+/* 初期制御 */
+(async()=>{
+  const id=location.hash.replace("#","")||new URLSearchParams(location.search).get("q");
   if(id){
-    const res = await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
-    const data = await res.json();
-
+    const res=await fetch(`${GAS}?action=get&id=${encodeURIComponent(id)}`);
+    const data=await res.json();
     if(data.url){
-      document.body.innerHTML = "";
-      const iframe = document.createElement("iframe");
-      iframe.src = data.url;
+      document.body.innerHTML="";
+      const iframe=document.createElement("iframe");
+      iframe.src=data.url;
       document.body.appendChild(iframe);
       return;
     }
-
-    document.body.innerHTML = "<div style='padding:20px'>Not found</div>";
+    document.body.innerHTML="<div style='padding:24px'>Not found</div>";
     return;
   }
 
-  // ===== ② ホーム画面 =====
-  app.style.display = "block";
-
-  app.innerHTML = `
+  app.style.display="block";
+  app.innerHTML=`
     <div class="container">
+      <h1>Short URL</h1>
 
-      <div class="card">
-        <h2>Short URL</h2>
-
-        <input id="id" placeholder="ID">
-        <input id="url" placeholder="URL">
-        <input id="password" placeholder="password">
-
-        <button onclick="create()">作成</button>
-
-        <div id="result"></div>
+      <div class="tabs">
+        <button class="active" onclick="switchTab('create',this)">作成</button>
+        <button onclick="switchTab('manage',this)">管理</button>
       </div>
 
-      <div class="card">
-        <h3>編集</h3>
+      <div id="create" class="panel active">
+        <div class="field">
+          <label>ID</label>
+          <input id="id">
+        </div>
+        <div class="field">
+          <label>転送先URL</label>
+          <input id="url">
+        </div>
+        <div class="field">
+          <label>パスワード</label>
+          <input id="password" type="password">
+        </div>
+        <button class="main" onclick="create()">作成</button>
+      </div>
 
-        <input id="editId" placeholder="ID">
-        <input id="editPass" placeholder="password">
+      <div id="manage" class="panel">
+        <div class="field">
+          <label>ID</label>
+          <input id="editId">
+        </div>
+        <div class="field">
+          <label>パスワード</label>
+          <input id="editPass" type="password">
+        </div>
+        <button class="main" onclick="login()">開く</button>
 
-        <button onclick="login()">開く</button>
-
-        <div id="editPanel" style="display:none">
-          <input id="editUrl" placeholder="new URL">
-          <button onclick="update()">更新</button>
-          <button onclick="remove()">削除</button>
+        <div id="editPanel">
+          <div class="field">
+            <label>新しいURL</label>
+            <input id="editUrl">
+          </div>
+          <button class="main" onclick="update()">更新</button>
+          <button class="sub" onclick="remove()">削除</button>
         </div>
       </div>
-
     </div>
   `;
-
 })();
 
-/**
- * 作成
- */
+/* UI */
+function switchTab(name,btn){
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  btn.classList.add("active");
+  document.getElementById(name).classList.add("active");
+}
+
+function toast(msg,isError=false){
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.className="toast show"+(isError?" error":"");
+  setTimeout(()=>t.classList.remove("show"),3000);
+}
+
+/* API */
 async function create(){
-  const id = document.getElementById("id").value;
-  const url = document.getElementById("url").value;
-  const password = document.getElementById("password").value;
-
-  const res = await fetch(GAS,{
+  const res=await fetch(GAS,{
     method:"POST",
-    body:JSON.stringify({action:"create",id,url,password})
+    body:JSON.stringify({
+      action:"create",
+      id:id.value,
+      url:url.value,
+      password:password.value
+    })
   });
-
-  const data = await res.json();
-
-  document.getElementById("result").innerHTML =
-    data.error || `OK: ${location.origin}/?q=${id}`;
+  const data=await res.json();
+  data.error
+    ? toast(data.error,true)
+    : toast(`作成完了: ${location.origin}/?q=${id.value}`);
 }
 
-/**
- * ログイン
- */
 async function login(){
-  const id = document.getElementById("editId").value;
-  const pass = document.getElementById("editPass").value;
-
-  const res = await fetch(`${GAS}?action=get&id=${id}`);
-  const data = await res.json();
-
-  if(!data.url) return alert("not found");
-
-  window.currentId = id;
-  document.getElementById("editPanel").style.display = "block";
-  document.getElementById("editUrl").value = data.url;
+  const res=await fetch(`${GAS}?action=get&id=${editId.value}`);
+  const data=await res.json();
+  if(!data.url){toast("見つかりません",true);return;}
+  window.currentId=editId.value;
+  editUrl.value=data.url;
+  editPanel.classList.add("open");
 }
 
-/**
- * 更新
- */
 async function update(){
-  const url = document.getElementById("editUrl").value;
-  const password = document.getElementById("editPass").value;
-
   await fetch(GAS,{
     method:"POST",
     body:JSON.stringify({
       action:"update",
       id:window.currentId,
-      url,
-      password
+      url:editUrl.value,
+      password:editPass.value
     })
   });
-
-  alert("updated");
+  toast("更新しました");
 }
 
-/**
- * 削除
- */
 async function remove(){
-  const password = document.getElementById("editPass").value;
-
   await fetch(GAS,{
     method:"POST",
     body:JSON.stringify({
       action:"delete",
       id:window.currentId,
-      password
+      password:editPass.value
     })
   });
-
-  alert("deleted");
+  toast("削除しました");
 }
-
 </script>
-
 </body>
 </html>
